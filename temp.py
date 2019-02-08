@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import sys
 import time
 import subprocess
 import re
@@ -10,6 +11,8 @@ os.system('clear')
 
 
 def main():
+
+	print(sys.argv)
 
 	testDuration = 5 #duration of the test in seconds, it is aproximate since it doesn't account for delays, would have to implement async timer
 	initTime = time.time()
@@ -29,26 +32,43 @@ def main():
 		#debugging purposes
 		print('#####################')
 		print('temps: ',System.tempReadings)
-		print('speeds: ',System.fanReadings)
+		print('speeds: ',System.fanReadings, '\n')
 
 		time.sleep(3)
 
-	print('test done, ran for: ', elapsedTime, 'seconds')
+	print('test done, ran for: ', "{:.1f}".format(elapsedTime), 'seconds', '\n')
+
+	printTempResults(System.tempReadings)
+	print('\n--------------------------------------------------------------\n')
+	printFanResults(System.fanReadings)
 
 
 def render(currentData):
 	os.system('clear')
-	print('Refreshing temperature every 2 seconds \n')
+	print('Refreshing temperature every 3 seconds \n')
 
 	print('CPU   :', currentData['cpuTemp'])
 	print('Fan Speed   :',currentData['fanSpeed'])	
 	
 
-def writeCurrentData(currentData):
-	#write the data
-	System.writeData(currentData)
-	
-	
+def calculateResults(resultsArray):
+	maxReading = max(resultsArray)
+	minReading = min(resultsArray)	
+	average = float("{:.1f}".format(sum(resultsArray)/len(resultsArray)))
+	return({'max': maxReading, 'min': minReading, 'average': average})
+
+def printTempResults(tempArray):
+	results = calculateResults(tempArray)
+	print("Average CPU Temperature: ", results['average'])
+	print("Max CPU Temperature: ", results['max'])
+	print("Min CPU Temperature: ", results['min'])
+
+def printFanResults(fanArray):
+	results = calculateResults(fanArray)
+	print("Average Fan Speed: ", results['average'])
+	print("Max Fan Speed: ", results['max'])
+	print("Min Fan Speed: ", results['min'])
+
 
 class System:
 	def __init__(self):
@@ -87,9 +107,6 @@ class System:
 		System.fanReadings.append(currentData['fanSpeed'])
 
 
-class Timer:
-	def __init__(self):
-		pass
 
 if __name__ == "__main__":
     main()
