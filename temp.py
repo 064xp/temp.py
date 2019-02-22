@@ -5,16 +5,20 @@ import sys
 import time
 import subprocess
 import re
+import argparse
 
 os.system('clear')
 
 
 
 def main():
+	args = parseArgs()
+	#if the user specified a duration for the test, use that. Else use default 60 secs
+	if(args.time):
+		testDuration = args.time
+	else:
+		testDuration = 5 #duration of the test in seconds, it is aproximate since it doesn't account for delays, would have to implement async timer
 
-	print(sys.argv)
-
-	testDuration = 5 #duration of the test in seconds, it is aproximate since it doesn't account for delays, would have to implement async timer
 	initTime = time.time()
 	currentTime = time.time()
 	elapsedTime = 0.0;
@@ -23,7 +27,7 @@ def main():
 		
 		currentData = System.getCurrentData()
 
-		render(currentData)
+		render(currentData, args)
 		System.writeData(currentData)
 
 		currentTime = time.time()
@@ -43,14 +47,19 @@ def main():
 	printFanResults(System.fanReadings)
 
 
-def render(currentData):
+
+
+
+def render(currentData, args):
 	os.system('clear')
 	print('Refreshing temperature every 3 seconds \n')
 
 	print('CPU   :', currentData['cpuTemp'])
 	print('Fan Speed   :',currentData['fanSpeed'])	
+	if args.stress:
+		print('stress true')
 	
-
+#gets the array with all of the logged readings and get min, max and averages them
 def calculateResults(resultsArray):
 	maxReading = max(resultsArray)
 	minReading = min(resultsArray)	
@@ -69,6 +78,15 @@ def printFanResults(fanArray):
 	print("Max Fan Speed: ", results['max'])
 	print("Min Fan Speed: ", results['min'])
 
+#setup argparser and parse the arguments, return the arguments namespace.
+def parseArgs():
+	parser = argparse.ArgumentParser(description='Measure and benchmark your CPU temperature')
+	parser.add_argument('-t','--time', type=int, help='Define how long the test should go on for in seconds, default is 60 seconds')
+	parser.add_argument('-f','--fanspeed', action='store_true', help='Record CPU fan speeds alongside temperatures')
+	parser.add_argument('-s','--stress', action='store_true', help='Apply stress test to the CPU while the test is running')
+	args = parser.parse_args()
+	return args
+
 
 class System:
 	def __init__(self):
@@ -82,14 +100,14 @@ class System:
 		return str(subprocess.check_output('sensors'))
 
 	def parseCpuTemp(rawData):
-		#parsing out the CPU temperature using regex, output looks like: CPU:    +55.55°C
-		pattern = re.compile(r'CPU:\s+\+(\d+\.\d)')
+		#parsing out the CPU temperature using regex, output looks like: Core X:    +55.55°C
+		pattern = re.compile(r'(?i)core...\s+\+(\d+\.\d)')
 		match = pattern.search(rawData)
 		#converting it into a float for further calculations
 		return float(match.group(1))
 
 	def parseFanSpeed(rawData):
-		pattern = re.compile(r'Processor Fan:\s+(\d+)')
+		pattern = re.compile(r'(?i)fan.+(\d+)')
 		match = pattern.search(rawData)
 		return int(match.group(1))
 
