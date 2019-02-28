@@ -107,7 +107,8 @@ class System:
 		return float(match.group(1))
 
 	def parseFanSpeed(rawData):
-		pattern = re.compile(r'(?i)fan.+(\d+)')
+		#pattern = re.compile(r'(?i)fan.+(\d+)')
+		pattern = re.compile(r'(\d+) RPM')
 		match = pattern.search(rawData)
 		return int(match.group(1))
 
