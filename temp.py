@@ -12,12 +12,13 @@ os.system('clear')
 
 
 def main():
+	#parseArgs() function returns the parsed arguments in a dictionary
 	args = parseArgs()
 	#if the user specified a duration for the test, use that. Else use default 60 secs
 	if(args.time):
 		testDuration = args.time
 	else:
-		testDuration = 5 #duration of the test in seconds, it is aproximate since it doesn't account for delays, would have to implement async timer
+		testDuration = 60 #duration of the test in seconds, it is aproximate since it doesn't account for delays, would have to implement async timer
 
 	initTime = time.time()
 	currentTime = time.time()
@@ -33,17 +34,17 @@ def main():
 		currentTime = time.time()
 		elapsedTime = currentTime - initTime
 	
-		#debugging purposes
-		print('#####################')
-		print('temps: ',System.tempReadings)
-		print('speeds: ',System.fanReadings, '\n')
+		if(args.verbose):
+			print('\n#####################')
+			print('temps: ',System.tempReadings, '\n')
+			print('speeds: ',System.fanReadings, '\n')
 
 		time.sleep(3)
 
-	print('test done, ran for: ', "{:.1f}".format(elapsedTime), 'seconds', '\n')
+	print('\ntest done, ran for: ', "{:.1f}".format(elapsedTime), 'seconds', '\n')
 
 	printTempResults(System.tempReadings)
-	print('\n--------------------------------------------------------------\n')
+	print('\n------------------------------------\n')
 	printFanResults(System.fanReadings)
 
 
@@ -82,7 +83,7 @@ def printFanResults(fanArray):
 def parseArgs():
 	parser = argparse.ArgumentParser(description='Measure and benchmark your CPU temperature')
 	parser.add_argument('-t','--time', type=int, help='Define how long the test should go on for in seconds, default is 60 seconds')
-	parser.add_argument('-f','--fanspeed', action='store_true', help='Record CPU fan speeds alongside temperatures')
+	parser.add_argument('-v','--verbose', action='store_true', help='Show the list of recorded readings of the current test')
 	parser.add_argument('-s','--stress', action='store_true', help='Apply stress test to the CPU while the test is running')
 	args = parser.parse_args()
 	return args
