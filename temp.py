@@ -1,34 +1,41 @@
 #!/usr/bin/python3
 
 import os
-import sys
 import time
 import subprocess
 import re
 import argparse
+from threading import Timer
+from multiprocessing import Process, Event
 
 os.system('clear')
 
-
+refreshRate = 1
+testDuration = 60
 
 def main():
 	#parseArgs() function returns the parsed arguments in a dictionary
 	args = parseArgs()
+	timerOverEvent = Event()
+	timerOverEvent.set()
+
 	#if the user specified a duration for the test, use that. Else use default 60 secs
 	if(args.time):
+		global testDuration
 		testDuration = args.time
-	else:
-		testDuration = 60 #duration of the test in seconds, it is aproximate since it doesn't account for delays, would have to implement async timer
 
+	timer = Timer(testDuration, stop, args=(timerOverEvent,))
+	timer.start()
+
+	#for getting elapsed time
 	initTime = time.time()
 	currentTime = time.time()
 	elapsedTime = 0.0;
 
-	while(elapsedTime <= testDuration):
-		
+	while(timerOverEvent.is_set()):
 		currentData = System.getCurrentData()
 
-		render(currentData, args)
+		render(currentData, elapsedTime, args)
 		System.writeData(currentData)
 
 		currentTime = time.time()
@@ -39,7 +46,9 @@ def main():
 			print('temps: ',System.tempReadings, '\n')
 			print('speeds: ',System.fanReadings, '\n')
 
-		time.sleep(3)
+		time.sleep(refreshRate)
+
+	timer.join()
 
 	print('\ntest done, ran for: ', "{:.1f}".format(elapsedTime), 'seconds', '\n')
 
@@ -49,14 +58,19 @@ def main():
 
 
 
+def stop(event):
+	event.clear()
+	print('stop')
 
-
-def render(currentData, args):
+def render(currentData, elapsedTime, args):
 	os.system('clear')
-	print('Refreshing temperature every 3 seconds \n')
+	print(f'Refreshing temperature every {refreshRate} seconds.')
+	print(f'Test running for {testDuration} seconds. \n')
 
 	print('CPU   :', currentData['cpuTemp'])
 	print('Fan Speed   :',currentData['fanSpeed'])	
+	print(f'\n\nElapsed Time: {round(elapsedTime)}s')
+
 	if args.stress:
 		print('stress true')
 	
