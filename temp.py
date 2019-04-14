@@ -19,10 +19,14 @@ def main():
 	timerOverEvent = Event()
 	timerOverEvent.set()
 
-	#if the user specified a duration for the test, use that. Else use default 60 secs
 	if(args.time):
+	#if the user specified a duration for the test, use that. Else use default 60 secs
 		global testDuration
 		testDuration = args.time
+
+	if(args.stress):
+		#if the stress test flag is set, initialize the load processes
+		initLoads(timerOverEvent)
 
 	timer = Timer(testDuration, stop, args=(timerOverEvent,))
 	timer.start()
@@ -69,10 +73,9 @@ def render(currentData, elapsedTime, args):
 
 	print('CPU   :', currentData['cpuTemp'])
 	print('Fan Speed   :',currentData['fanSpeed'])	
-	print(f'\n\nElapsed Time: {round(elapsedTime)}s')
-
 	if args.stress:
-		print('stress true')
+		print('\nStress test enabled, applying load to CPU...')
+	print(f'\n\nElapsed Time: {round(elapsedTime)}s')
 	
 #gets the array with all of the logged readings and get min, max and averages them
 def calculateResults(resultsArray):
@@ -140,7 +143,26 @@ class System:
 		System.tempReadings.append(currentData['cpuTemp'])
 		System.fanReadings.append(currentData['fanSpeed'])
 
+def initLoads(event):
+	#Spawn a new process to run a Load for each core on the machine
+	procs = []
 
+	for i in range(os.cpu_count()):
+		procs.append(Process(target=Load, args=(event,)))
+	
+	#start each process
+	for process in procs:
+		process.start()
+
+def Load(event):
+	#function to add a load to the cpu
+	import hashlib	
+
+	hashStr = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean vestibulum nec purus sit amet finibus. Sed consequat ornare pretium. Etiam posuere velit libero, et tristique velit sollicitudin eget."
+	print('Applying load on CPU...')
+
+	while event.is_set():
+		hashStr = hashlib.sha256(hashStr.encode(encoding='UTF-8')).hexdigest()
 
 if __name__ == "__main__":
     main()
